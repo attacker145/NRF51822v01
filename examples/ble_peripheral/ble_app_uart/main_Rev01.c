@@ -128,7 +128,7 @@ uint8_t adv;
 
 //ADC
 #define ADC_BUFFER_SIZE 10
-static nrf_adc_value_t       adc_buffer[ADC_BUFFER_SIZE]; /**< ADC buffer. */
+static nrf_adc_value_t       adc_buffer[ADC_BUFFER_SIZE]; // ADC buffer 16 bit values
 /**
  * @brief Function for main application entry.
  */
@@ -142,7 +142,7 @@ void adc_read_sample(void)
 	*/
 	APP_ERROR_CHECK(nrf_drv_adc_buffer_convert(adc_buffer,ADC_BUFFER_SIZE));//int16_t adc_buffer, 16 bit var array. ADC is 10 bit
 	uint32_t i;
-	for (i = 0; i < ADC_BUFFER_SIZE; i++)
+	for (i = 0; i < ADC_BUFFER_SIZE; i++) // Fill up ADC buffer with 10 bit values
 	{
 		// manually trigger ADC conversion
 		nrf_drv_adc_sample();
@@ -285,7 +285,7 @@ void spi_event_handler(nrf_drv_spi_evt_t const * p_event)
 	  Result = (Result + (uint32_t)m_rx_buf[1]);	// Save byte 1 of the ADC result in uint32_t Result
 	  Result = (Result << 8);
 	  Result = (Result + (uint32_t)m_rx_buf[2]);	// Save byte 2 of the ADC result in uint32_t Result
-	  Result = Result * 2;
+	  //Result = Result * 2;
 		hexdec_long( Result );											// Convert Result into character string. Fills up Rx_buf
 //#define UART_SPI
 #ifdef UART_SPI	
@@ -1013,17 +1013,30 @@ int main(void)
 	   *#define SPI0_CONFIG_SCK_PIN         16
 	   *#define SPI0_CONFIG_MOSI_PIN        17
      *#define SPI0_CONFIG_MISO_PIN        18
+		 *SPI is in master mode
 		*/
 		nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG(SPI_INSTANCE);	// Configure SPI nrf_drv_spi.h line 151
     spi_config.ss_pin = SPI_CS_PIN;				//CS is pin 19
     APP_ERROR_CHECK(nrf_drv_spi_init(&spi, &spi_config, spi_event_handler)); //spi_event_handler_init
 		//APP_ERROR_CHECK(nrf_drv_spi_init(&spi, &spi_config, spi_event_handler_init));
-							
+		
+		//Excitation current configure
 		spi_tx_buff_ptr = adc_idac_config;		// Initialize pointer to the exitation config	
 		// Reset rx buffer and transfer done flag
     memset(m_rx_buf, 0, m_length_exc);
 		//memset(m_rx_buf, 0, 13);
     spi_xfer_done = false;	
+		/*
+		*Functions
+		*ret_code_t 	nrf_drv_spi_init (nrf_drv_spi_t const *const p_instance, nrf_drv_spi_config_t const *p_config, nrf_drv_spi_handler_t handler)
+		*Function for initializing the SPI master driver instance.
+		*
+		*void 	nrf_drv_spi_uninit (nrf_drv_spi_t const *const p_instance)
+		*Function for uninitializing the SPI master driver instance.
+		*
+		*ret_code_t 	nrf_drv_spi_transfer (nrf_drv_spi_t const *const p_instance, uint8_t const *p_tx_buffer, uint8_t tx_buffer_length, uint8_t *p_rx_buffer, uint8_t rx_buffer_length)
+    *Function for starting the SPI data transfer
+		*/
 		// Read internal registers into m_rx_buf
 		APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, (uint8_t const *)spi_tx_buff_ptr, m_length_exc, m_rx_buf, m_length_exc));
 		//APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, read_reg, length_read_reg, m_rx_buf, length_read_reg));
